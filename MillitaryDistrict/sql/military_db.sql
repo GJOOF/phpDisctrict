@@ -65,7 +65,8 @@ CREATE TABLE IF NOT EXISTS  `aircraft` (
 
 CREATE TABLE IF NOT EXISTS  `buildings` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
-  `name` varchar(255)
+  `name` varchar(255),
+  `deployed_units` int
 );
 
 CREATE TABLE IF NOT EXISTS  `settlement` (
