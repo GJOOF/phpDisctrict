@@ -37,13 +37,12 @@ try {
     
     if ($stmt->rowCount() > 0) {
         echo '<h2>Список военнослужащих</h2>';
-        
         echo '<div class="table-container">
                 <table>
                     <thead>
                         <tr>';
-        
         // Функция для генерации ссылок сортировки
+       
         function sort_link($column, $title, $current_sort, $current_order) {
             $new_order = ($current_sort == $column && $current_order == 'asc') ? 'desc' : 'asc';
             $arrow = '';
@@ -70,7 +69,7 @@ try {
                     <tbody>';
         
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            echo "<tr class='clickable-row' data-id='" . htmlspecialchars($row['id']) . "'>
+            echo "<tr class='clickable-row'
                     <td>" . htmlspecialchars($row['id'] ?? 'NDA') . "</td>
                     <td>" . htmlspecialchars($row['name'] ?? 'NDA') . "</td>
                     <td>" . htmlspecialchars($row['age'] ?? 'NDA') . "</td>

@@ -168,7 +168,7 @@ tr:hover {
     background-color: #f1f1f1;
 }
 </style>
-<link href="../css/bootstrap.min.css" rel="stylesheet">
-<link href="../css/bootstrap.css" rel="stylesheet">
-<link href="../css/style.css" rel="stylesheet">
+<link rel="stylesheet" href="../css/bootstrap.min.css">
+<link rel="stylesheet" href="../css/bootstrap.css">
+<link rel="stylesheet" href="../css/style.css">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
