@@ -18,7 +18,7 @@ $sql = "SELECT
     r.id,
     r.name,
     TIMESTAMPDIFF(YEAR, r.age, CURDATE()) AS age,
-    IF(r.sex = 0, 'Муж', 'Жен') AS sex,
+    IF(r.sex = 1, 'Муж', 'Жен') AS sex,
     mr.name AS rank_id,
     mo.name AS occupation_id,
     mf.name AS formation_id,

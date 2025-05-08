@@ -23,6 +23,7 @@ try {
         // Перебираем все записи
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             echo "<tr>
+                    <td>" . htmlspecialchars($row['id']) . "</td>
                     <td>" . htmlspecialchars($row['name']) . "</td>
                     <td>" . htmlspecialchars($row['amount']) . "</td>
                   </tr>";
