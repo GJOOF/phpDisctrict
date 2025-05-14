@@ -1,6 +1,6 @@
 <?php 
-require 'shared/header.php'; 
-require 'db_connect/db_connection.php';
+require_once 'shared/header.php'; 
+require_once 'db_connect/db_connection.php';
 
 // SQL-запрос для выборки всех записей из таблицы Vehicle
 $sql = "SELECT * FROM Weapon";
@@ -37,3 +37,4 @@ try {
     echo "Ошибка при выборке данных: " . $e->getMessage();
 }
 ?>
+<link href="../css/bootstrap.min.css" rel="stylesheet">

@@ -1,96 +1,216 @@
-<?php 
+<?php
 require 'shared/header.php'; 
-require 'db_connect/db_connection.php';
+require 'db_connect/db_connection.php'; ?>
 
-// Определяем параметры сортировки
-$sort_column = $_GET['sort'] ?? 'id';
-$sort_order = $_GET['order'] ?? 'asc';
+<h2>Список военнослужащих</h2>
 
-// Валидация параметров сортировки
-$allowed_columns = ['id', 'name', 'age', 'sex', 'rank_id', 'occupation_id', 'formation_id', 'service_len'];
-if (!in_array($sort_column, $allowed_columns)) {
-    $sort_column = 'id';
-}
-$sort_order = $sort_order === 'desc' ? 'desc' : 'asc';
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Имя <input type="text" id="name_filter" placeholder="Фильтр"></th>
+                <th>Возраст <input type="number" id="age_filter" placeholder="Фильтр (мин. 18)" min="18"></th>
+                <th>Пол <select id="sex_filter">
+                    <option value="">Любой</option>
+                    <option value="0">Муж</option>
+                    <option value="1">Жен</option>
+                </select></th>
+                <th>Звание <select id="rank_filter">
+                    <option value="">Любое</option>
+                    <?php
+                    // Запрос для получения всех записей из таблицы mil_rank
+                    $rankQuery = "SELECT id, name FROM mil_rank ORDER BY name";
+                    $rankStmt = $pdo->prepare($rankQuery);
+                    $rankStmt->execute();
 
-// SQL-запрос с сортировкой
-$sql = "SELECT 
-    r.id,
-    r.name,
-    TIMESTAMPDIFF(YEAR, r.age, CURDATE()) AS age,
-    IF(r.sex = 0, 'Муж', 'Жен') AS sex,
-    mr.name AS rank_id,
-    mo.name AS occupation_id,
-    mf.name AS formation_id,
-    TIMESTAMPDIFF(YEAR, r.service_len, CURDATE()) AS service_len,
-    r.IsSergeant,
-    r.IsOfficer
-FROM 
-    recruit r
-LEFT JOIN mil_rank mr ON r.rank_id = mr.id
-LEFT JOIN mil_occupation mo ON r.occupation_id = mo.id
-LEFT JOIN mil_formation mf ON r.formation_id = mf.id
-ORDER BY $sort_column $sort_order";
+                    // Генерация опций для выпадающего списка
+                    while ($rank = $rankStmt->fetch(PDO::FETCH_ASSOC)) {
+                        echo "<option value='" . htmlspecialchars($rank['id']) . "'>" . htmlspecialchars($rank['name']) . "</option>";
+                    }
+                    ?>
+                </select></th>
+                <th>Подразделение <select id="formation_filter">
+                    <option value="">Любое</option>
+                    <?php
+                    // Запрос для получения всех записей из таблицы mil_formation
+                    $formationQuery = "SELECT id, name FROM mil_formation ORDER BY name";
+                    $formationStmt = $pdo->prepare($formationQuery);
+                    $formationStmt->execute();
 
-try {
-    $stmt = $pdo->query($sql);
-    
-    if ($stmt->rowCount() > 0) {
-        echo '<h2>Список военнослужащих</h2>';
-        
-        echo '<div class="table-container">
-                <table>
-                    <thead>
-                        <tr>';
-        
-        // Функция для генерации ссылок сортировки
-        function sort_link($column, $title, $current_sort, $current_order) {
-            $new_order = ($current_sort == $column && $current_order == 'asc') ? 'desc' : 'asc';
-            $arrow = '';
-            if ($current_sort == $column) {
-                $arrow = $current_order == 'asc' ? ' ↑' : ' ↓';
+                    // Генерация опций для выпадающего списка
+                    while ($formation = $formationStmt->fetch(PDO::FETCH_ASSOC)) {
+                        echo "<option value='" . htmlspecialchars($formation['id']) . "'>" . htmlspecialchars($formation['name']) . "</option>";
+                    }
+                    ?>
+                </select></th>
+                <th>ВУС</th>
+                <th>Срок службы</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php
+            $sql = "SELECT 
+                r.id,
+                r.name,
+                TIMESTAMPDIFF(YEAR, r.age, CURDATE()) AS age,
+                IF(r.sex = 0, 'Муж', 'Жен') AS sex,
+                mr.name AS rank_id,
+                GROUP_CONCAT(DISTINCT mo.name SEPARATOR ',') AS occupation_id,
+                mf.name AS formation_id,
+                TIMESTAMPDIFF(YEAR, r.service_len, CURDATE()) AS service_len,
+                r.IsSergeant,
+                r.IsOfficer
+            FROM 
+                recruit r
+            LEFT JOIN mil_rank mr ON r.rank_id = mr.id
+            LEFT JOIN recruit_occupation ro ON r.id = ro.recruit_id
+            LEFT JOIN mil_occupation mo ON ro.occupation_id = mo.id
+            LEFT JOIN mil_formation mf ON r.formation_id = mf.id
+            GROUP BY r.id";
+
+            try {
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute(); // Передаем параметры для фильтрации
+                if ($stmt->rowCount() > 0) {
+                    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                        echo "<tr>
+                                <td>" . htmlspecialchars($row['name'] ?? 'NDA') . "</td>
+                                <td>" . htmlspecialchars($row['age'] ?? 'NDA') . "</td>
+                                <td>" . htmlspecialchars($row['sex'] ?? 'NDA') . "</td>
+                                <td>" . htmlspecialchars($row['rank_id'] ?? 'NDA') . "</td>
+                                <td>" . htmlspecialchars($row['formation_id'] ?? 'NDA') . "</td>
+                                <td>";
+
+                        // Если есть ВУС, показываем кнопку "Показать ВУС"
+                        if (!empty($row['occupation_id'])) {
+                            $vusList = explode(',', $row['occupation_id']);
+                            $vusCount = count($vusList);
+                            
+                            echo '<div class="vus-wrapper">
+                                    <button class="toggle-vus-btn" onclick="toggleVus(this)">
+                                        Показать ВУС (' . $vusCount . ')
+                                    </button>
+                                    <ul class="vus-list" style="display:none;">';
+                            
+                            foreach ($vusList as $vus) {
+                                $cleanVus = trim($vus);
+                                if (!empty($cleanVus)) {
+                                    echo '<li>' . htmlspecialchars($cleanVus) . '</li>';
+                                }
+                            }
+                            echo '</ul></div>';
+                        } else {
+                            echo 'NDA';
+                        }
+
+                        echo "</td>
+                                <td>" . htmlspecialchars($row['service_len'] ?? 'NDA') . "</td>
+                            </tr>";
+                    }
+                } else {
+                    echo "Нет данных для отображения.";
+                }
+            } catch (PDOException $e) {
+                echo "Ошибка при выборке данных: " . $e->getMessage();
             }
-            return '<a href="?sort='.$column.'&order='.$new_order.'">'.$title.$arrow.'</a>';
-        }
-        
-        // Заголовки таблицы с ссылками сортировки
-        echo '<th>'.sort_link('id', 'ID', $sort_column, $sort_order).'</th>';
-        echo '<th>'.sort_link('name', 'Name', $sort_column, $sort_order).'</th>';
-        echo '<th>'.sort_link('age', 'Age', $sort_column, $sort_order).'</th>';
-        echo '<th>'.sort_link('sex', 'Sex', $sort_column, $sort_order).'</th>';
-        echo '<th>'.sort_link('rank_id', 'Rank', $sort_column, $sort_order).'</th>';
-        echo '<th>'.sort_link('occupation_id', 'VUS', $sort_column, $sort_order).'</th>';
-        echo '<th>'.sort_link('formation_id', 'Formation', $sort_column, $sort_order).'</th>';
-        echo '<th>'.sort_link('service_len', 'Service', $sort_column, $sort_order).'</th>';
-        echo '<th>Sergeant</th>';
-        echo '<th>Officer</th>';
-        
-        echo '</tr>
-                    </thead>
-                    <tbody>';
-        
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            echo "<tr class='clickable-row' data-id='" . htmlspecialchars($row['id']) . "'>
-                    <td>" . htmlspecialchars($row['id'] ?? 'NDA') . "</td>
-                    <td>" . htmlspecialchars($row['name'] ?? 'NDA') . "</td>
-                    <td>" . htmlspecialchars($row['age'] ?? 'NDA') . "</td>
-                    <td>" . htmlspecialchars($row['sex'] ?? 'NDA') . "</td>
-                    <td>" . htmlspecialchars($row['rank_id'] ?? 'NDA') . "</td>
-                    <td>" . htmlspecialchars($row['occupation_id'] ?? 'NDA') . "</td>
-                    <td>" . htmlspecialchars($row['formation_id'] ?? 'NDA') . "</td>
-                    <td>" . htmlspecialchars($row['service_len'] ?? 'NDA') . "</td>
-                    <td>" . ($row['IsSergeant'] ? 'Да' : 'Нет') . "</td>
-                    <td>" . ($row['IsOfficer'] ? 'Да' : 'Нет') . "</td>
-                  </tr>";
-        }
+            ?>
+        </tbody>
+    </table>
+</div>
 
-        echo '</tbody>
-              </table>
-              </div>';
-    } else {
-        echo "Нет данных для отображения.";
+<script>
+    // Получаем все строки таблицы
+    const rows = document.querySelectorAll('table tbody tr');
+    
+    // Получаем фильтры
+    const nameFilter = document.getElementById('name_filter');
+    const ageFilter = document.getElementById('age_filter');
+    const sexFilter = document.getElementById('sex_filter');
+    const rankFilter = document.getElementById('rank_filter');
+    const formationFilter = document.getElementById('formation_filter');
+
+    // Функция для фильтрации строк
+    function filterTable() {
+        const nameVal = nameFilter.value.toLowerCase();
+        const ageVal = ageFilter.value;
+        const sexVal = sexFilter.value;
+        const rankVal = rankFilter.value;
+        const formationVal = formationFilter.value;
+
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            const name = cells[0].textContent.toLowerCase();
+            const age = parseInt(cells[1].textContent, 10);
+            const sex = cells[2].textContent.toLowerCase();
+            const rank = cells[3].textContent.toLowerCase();
+            const formation = cells[4].textContent.toLowerCase();
+
+            const matchesName = name.includes(nameVal);
+            const matchesAge = ageVal ? age >= parseInt(ageVal, 10) : true;
+            const matchesSex = sexVal ? sex.includes(sexVal.toLowerCase()) : true;
+            const matchesRank = rankVal ? rank.includes(rankVal.toLowerCase()) : true;
+            const matchesFormation = formationVal ? formation.includes(formationVal.toLowerCase()) : true;
+
+            // Показываем или скрываем строку в зависимости от того, соответствует ли она всем фильтрам
+            if (matchesName && matchesAge && matchesSex && matchesRank && matchesFormation) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
     }
-} catch (PDOException $e) {
-    echo "Ошибка при выборке данных: " . $e->getMessage();
-}
-?>
+
+    // Добавляем слушателей событий для всех фильтров
+    nameFilter.addEventListener('input', filterTable);
+    ageFilter.addEventListener('input', filterTable);
+    sexFilter.addEventListener('change', filterTable);
+    rankFilter.addEventListener('change', filterTable);
+    formationFilter.addEventListener('change', filterTable);
+
+    // Изначальная фильтрация
+    filterTable();
+
+    // Функция для скрытия/показа ВУС
+    function toggleVus(btn) {
+        const list = btn.nextElementSibling;
+        if (list.style.display === "none") {
+            list.style.display = "block";
+            btn.textContent = btn.textContent.replace("Показать", "Скрыть");
+        } else {
+            list.style.display = "none";
+            btn.textContent = btn.textContent.replace("Скрыть", "Показать");
+        }
+    }
+</script>
+
+<link href="../css/style.css" rel="stylesheet">
+
+<style>
+    .vus-wrapper {
+        position: relative;
+        margin: 2px 0;
+    }
+    .toggle-vus-btn {
+        background: none;
+        border: none;
+        color: #0066cc;
+        cursor: pointer;
+        padding: 2px 5px;
+        text-align: left;
+        font: inherit;
+    }
+    .toggle-vus-btn:hover {
+        text-decoration: underline;
+    }
+    .vus-list {
+        margin: 5px 0 0 15px;
+        padding: 0;
+        list-style-type: none;
+        border-left: 2px solid #ddd;
+        padding-left: 10px;
+    }
+    .vus-list li {
+        padding: 2px 0;
+    }
+</style>
+

@@ -22,6 +22,67 @@ transition: transform 0.3s ease, box-shadow 0.3s ease;
 .create-button:hover {
     background-color: #45a049; /* Более тёмный зелёный при наведении */
 }
+.buildings-wrapper {
+    position: relative;
+    margin: 2px 0;
+}
+.toggle-buildings-btn {
+    background: none;
+    border: none;
+    color: #0066cc;
+    cursor: pointer;
+    padding: 2px 5px;
+    text-align: left;
+    font: inherit;
+}
+.toggle-buildings-btn:hover {
+    text-decoration: underline;
+}
+.buildings-list {
+    margin: 5px 0 0 15px;
+    padding: 0;
+    list-style-type: none;
+    border-left: 2px solid #ddd;
+    padding-left: 10px;
+}
+.buildings-list li {
+    padding: 2px 0;
+}
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+.modal-content {
+    background-color: #fefefe;
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 60%;
+    max-width: 800px;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.close:hover {
+    color: black;
+}
+/* Подсветка строк при наведении */
+.clickable-row:hover {
+    background-color: #f5f5f5;
+    cursor: pointer;
+}
 
 /* Стили для модального окна */
 .modal {
@@ -264,3 +325,29 @@ tr:hover {
         grid-template-columns: 1fr;
     }
 }
+.vus-wrapper {
+                position: relative;
+                margin: 2px 0;
+            }
+            .toggle-vus-btn {
+                background: none;
+                border: none;
+                color: #0066cc;
+                cursor: pointer;
+                padding: 2px 5px;
+                text-align: left;
+                font: inherit;
+            }
+            .toggle-vus-btn:hover {
+                text-decoration: underline;
+            }
+            .vus-list {
+                margin: 5px 0 0 15px;
+                padding: 0;
+                list-style-type: none;
+                border-left: 2px solid #ddd;
+                padding-left: 10px;
+            }
+            .vus-list li {
+                padding: 2px 0;
+            }

@@ -37,3 +37,4 @@ try {
     echo "Ошибка при выборке данных: " . $e->getMessage();
 }
 ?>
+<link href="../css/bootstrap.min.css" rel="stylesheet">

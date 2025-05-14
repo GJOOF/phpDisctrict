@@ -1,3 +1,4 @@
+<title>Информационная система военного округа</title> 
 <nav
     class="navbar navbar-expand-sm navbar-dark bg-primary"
 >
@@ -18,10 +19,10 @@
             <li class="nav-item">
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="armies.php">Армии</a>
+                <a class="nav-link" href="armies.php">Подразделения</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="units.php">Военные части</a>
+                <a class="nav-link" href="units.php">Воинские части</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="personnel.php">Личный состав</a>
@@ -30,7 +31,7 @@
                 <a class="nav-link" href="vehicle.php">Техника</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="weapon.php">Вооружение</a>
+                <a class="nav-link" href="admin.php">Вооружение</a>
             </li>
         </ul>
     </div>
@@ -60,7 +61,12 @@ transition: transform 0.3s ease, box-shadow 0.3s ease;
 .create-button:hover {
     background-color: #45a049; /* Более тёмный зелёный при наведении */
 }
-
+.filter-bar{
+  height: 50px;
+  border-bottom: 1px solid #454545;
+  padding: 16px;
+  margin-left: 400px;
+}
 /* Стили для модального окна */
 .modal {
     display: none; /* Скрыто по умолчанию */
@@ -168,7 +174,8 @@ tr:hover {
     background-color: #f1f1f1;
 }
 </style>
-<link href="../css/bootstrap.min.css" rel="stylesheet">
-<link href="../css/bootstrap.css" rel="stylesheet">
-<link href="../css/style.css" rel="stylesheet">
+
+<link rel="stylesheet" href="../css/bootstrap.min.css">
+<link rel="stylesheet" href="../css/bootstrap.css">
+<link rel="stylesheet" href="../css/style.css">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
