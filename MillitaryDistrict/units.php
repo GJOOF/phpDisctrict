@@ -6,112 +6,73 @@ $sql = "SELECT
     mu.id AS id,
     mu.name AS name,
     mf.name AS formation_name,
-    w.amount AS weapon_amount,
-    v.amount AS vehicle_amount,
-    GROUP_CONCAT(DISTINCT b.name SEPARATOR ',') AS buildings_list,
-    GROUP_CONCAT(DISTINCT s.name SEPARATOR ',') AS settlements_list
+    GROUP_CONCAT(DISTINCT w.name SEPARATOR ', ') AS weapons_list,  
+    GROUP_CONCAT(DISTINCT ue.weapon_count SEPARATOR ', ') AS weapons_count,  
+    GROUP_CONCAT(DISTINCT ue.vehicle_count SEPARATOR ', ') AS vehicle_count,  
+    GROUP_CONCAT(DISTINCT v.name SEPARATOR ', ') AS vehicle_names,  
+    GROUP_CONCAT(DISTINCT b.name SEPARATOR ', ') AS buildings_list,
+    GROUP_CONCAT(DISTINCT s.name SEPARATOR ', ') AS settlements_list
 FROM 
     mil_unit mu
 LEFT JOIN mil_formation mf ON mu.formation_id = mf.id
-LEFT JOIN weapon w ON mu.weapon_id = w.id
-LEFT JOIN vehicle v ON mu.vehicle_id = v.id
 LEFT JOIN unit_buildings ub ON mu.id = ub.unit_id
-LEFT JOIN unit_settlement us ON mu.id = ub.unit_id
+LEFT JOIN unit_settlement us ON mu.id = us.unit_id
 LEFT JOIN buildings b ON ub.building_id = b.id
 LEFT JOIN settlement s ON us.settlement_id = s.id
+LEFT JOIN unit_equipment ue ON mu.id = ue.unit_id
+LEFT JOIN weapon w ON ue.weapon_id = w.id  
+LEFT JOIN vehicle v ON ue.vehicle_id = v.id  
 GROUP BY mu.id";
 
 try {
-    // Выполнение запроса
     $stmt = $pdo->query($sql);
     
-    // Проверка, есть ли записи в таблице
     if ($stmt->rowCount() > 0) {
-        echo '<h2>Список воинских частей</h2>';
-        echo '<div class="table-container">
-                <table>
-                    <tr>
-                        <th>Название</th>
-                        <th>Формирование</th>
-                        <th>Оружие</th>
-                        <th>Транспорт</th>
-                        <th>Здания</th>
-                        <th>Местоположение</th>
-                    </tr>';
+        $output = '<h2>Список воинских частей</h2>';
+        $output .= '<div class="table-container"><table>';
+        $output .= '<tr><th>Название</th><th>Формирование</th><th>Оружие</th><th>Транспорт</th><th>Здания</th><th>Местоположение</th></tr>';
         
-        // Перебираем все записи
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            echo "<tr>
-                    <td>" . htmlspecialchars($row['name'] ?? 'NDA') . "</td>
-                    <td>" . htmlspecialchars($row['formation_name'] ?? 'NDA') . "</td>
-                    <td>" . htmlspecialchars($row['weapon_amount'] ?? 'NDA') . "</td>
-                    <td>" . htmlspecialchars($row['vehicle_amount'] ?? 'NDA') . "</td>
-                    <td>";
+            // Разбиваем строки данных на массивы
+            $weapons = !empty($row['weapons_list']) ? explode(',', $row['weapons_list']) : [];
+            $weapons_count = !empty($row['weapons_count']) ? explode(',', $row['weapons_count']) : [];
+            $vehicles = !empty($row['vehicle_names']) ? explode(',', $row['vehicle_names']) : [];
+            $vehicles_count = !empty($row['vehicle_count']) ? explode(',', $row['vehicle_count']) : [];
+            $buildings = !empty($row['buildings_list']) ? explode(',', $row['buildings_list']) : [];
+            $settlements = !empty($row['settlements_list']) ? explode(',', $row['settlements_list']) : [];
             
-            // Вывод списка зданий с возможностью сворачивания
-            if (!empty($row['buildings_list'])) {
-                $buildings = explode(',', $row['buildings_list']);
-                $buildingsCount = count($buildings);
-                
-                echo '<div class="buildings-wrapper">
-                        <button class="toggle-buildings-btn" onclick="toggleBuildings(this)">
-                            Показать здания (' . $buildingsCount . ')
-                        </button>
-                        <ul class="buildings-list" style="display:none;">';
-                
-                foreach ($buildings as $building) {
-                    $cleanBuilding = trim($building);
-                    if (!empty($cleanBuilding)) {
-                        echo '<li>' . htmlspecialchars($cleanBuilding) . '</li>';
-                    }
-                }
-                
-                echo '</ul></div>';
-            } else {
-                echo 'NDA';
-            }
+            $output .= "<tr>
+                        <td>" . htmlspecialchars($row['name'] ?? 'NDA') . "</td>
+                        <td>" . htmlspecialchars($row['formation_name'] ?? 'NDA') . "</td>
+                        <td>";
             
-            echo "</td>
-                    <td>";
+            // Оружие
+            $output .= displayListWithToggle($weapons, $weapons_count, 'оружие');
             
-            // Вывод списка местоположений
-            if (!empty($row['settlements_list'])) {
-                $settlements = explode(',', $row['settlements_list']);
-                $settlementsCount = count($settlements);
-                
-                echo '<div class="settlements-wrapper">
-                        <button class="toggle-settlements-btn" onclick="toggleSettlements(this)">
-                            Показать (' . $settlementsCount . ')
-                        </button>
-                        <ul class="settlements-list" style="display:none;">';
-                
-                foreach ($settlements as $settlement) {
-                    $cleanSettlement = trim($settlement);
-                    if (!empty($cleanSettlement)) {
-                        echo '<li>' . htmlspecialchars($cleanSettlement) . '</li>';
-                    }
-                }
-                
-                echo '</ul></div>';
-            } else {
-                echo 'NDA';
-            }
+            $output .= "</td><td>";
             
-            echo "</td>
-                </tr>";
+            // Транспорт
+            $output .= displayListWithToggle($vehicles, $vehicles_count, 'транспорт');
+            
+            $output .= "</td><td>";
+            
+            // Здания
+            $output .= displayListWithToggle($buildings, [], 'здания');
+            
+            $output .= "</td><td>";
+            
+            // Местоположение
+            $output .= displayListWithToggle($settlements, [], 'местоположение');
+            
+            $output .= "</td></tr>";
         }
 
-        echo '</table>
-              </div>';
+        $output .= '</table></div>';
         
         // Добавляем стили и скрипт один раз в конце
-        echo '
+        $output .= '
         <style>
-            .buildings-wrapper, .settlements-wrapper {
-                position: relative;
-                margin: 2px 0;
-            }
-            .toggle-buildings-btn, .toggle-settlements-btn {
+            .toggle-btn {
                 background: none;
                 border: none;
                 color: #0066cc;
@@ -120,22 +81,22 @@ try {
                 text-align: left;
                 font: inherit;
             }
-            .toggle-buildings-btn:hover, .toggle-settlements-btn:hover {
+            .toggle-btn:hover {
                 text-decoration: underline;
             }
-            .buildings-list, .settlements-list {
+            .list-wrapper {
                 margin: 5px 0 0 15px;
                 padding: 0;
                 list-style-type: none;
                 border-left: 2px solid #ddd;
                 padding-left: 10px;
             }
-            .buildings-list li, .settlements-list li {
+            .list-wrapper li {
                 padding: 2px 0;
             }
         </style>
         <script>
-            function toggleBuildings(btn) {
+            function toggleList(btn) {
                 const list = btn.nextElementSibling;
                 if (list.style.display === "none") {
                     list.style.display = "block";
@@ -145,45 +106,36 @@ try {
                     btn.textContent = btn.textContent.replace("Скрыть", "Показать");
                 }
             }
-            
-            function toggleSettlements(btn) {
-                const list = btn.nextElementSibling;
-                if (list.style.display === "none") {
-                    list.style.display = "block";
-                    btn.textContent = btn.textContent.replace("Показать", "Скрыть");
-                } else {
-                    list.style.display = "none";
-                    btn.textContent = btn.textContent.replace("Скрыть", "Показать");
-                }
-            }
-                $(document).ready(function(){
-  $(".filter-dropdown, .text-button").click(function(){
-    $(".edit-filter-modal").toggleClass("hidden");
-    
-  });
-    $(".apply-button").click(function(){
-    $(".edit-filter-modal").toggleClass("hidden");
-          $(".filter, .filter-remove, .fa-plus, .fa-filter").toggleClass("filter-hidden");
-      $(".filter-dropdown-text").text("Add filter");
-    
-      
-    });
-      
-      $(".filter-remove").click(function(){
-        $(".filter, .filter-remove, .fa-plus, .fa-filter").toggleClass("filter-hidden");
-        $(".filter-dropdown-text").text("Filter dataset");
-      });
-  
-  
-  
-  
-});
         </script>';
+        
+        echo $output;  // Выводим весь собранный HTML
     } else {
         echo "Нет данных для отображения.";
     }
 } catch (PDOException $e) {
     echo "Ошибка при выборке данных: " . $e->getMessage();
 }
+
+// Функция для отображения списка с кнопкой показать/скрыть
+function displayListWithToggle($items, $counts, $type) {
+    if (!empty($items)) {
+        $output = '<div class="' . $type . '-wrapper">
+                    <button class="toggle-btn" onclick="toggleList(this)">
+                        Показать ' . $type . ' (' . count($items) . ')
+                    </button>
+                    <ul class="' . $type . '-list" style="display:none;">';
+        
+        foreach ($items as $index => $item) {
+            $cleanItem = trim($item);
+            $count = isset($counts[$index]) ? $counts[$index] : 0;
+            if (!empty($cleanItem)) {
+                $output .= '<li>' . htmlspecialchars($cleanItem) . ' (x' . htmlspecialchars($count) . ')</li>';
+            }
+        }
+        
+        $output .= '</ul></div>';
+        return $output;
+    }
+    return 'NDA';
+}
 ?>
-<link href="../css/style.css" rel="stylesheet">

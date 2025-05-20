@@ -31,7 +31,7 @@
                 <a class="nav-link" href="vehicle.php">Техника</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="admin.php">Вооружение</a>
+                <a class="nav-link" href="weapon.php">Вооружение</a>
             </li>
         </ul>
     </div>
