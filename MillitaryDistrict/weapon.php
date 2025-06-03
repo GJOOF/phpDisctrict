@@ -73,7 +73,7 @@ try {
     
     // Получаем фильтры
     const nameFilter = document.getElementById('name_filter');
-    const typeFilter = document.getElementById('type_filter');
+    const    = document.getElementById('type_filter');
     const amountFilter = document.getElementById('amount_filter');
 
     // Функция для фильтрации строк

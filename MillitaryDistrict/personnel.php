@@ -42,10 +42,12 @@ $sql = "SELECT
                 r.id,
                 r.name,
                 TIMESTAMPDIFF(YEAR, r.age, CURDATE()) AS age,
-                IF(r.sex = 0, 'Муж', 'Жен') AS sex,
-                mr.name AS rank_id,
+                r.sex,
+                mr.name AS rank_name,
+                r.rank_id as rank_num,
                 GROUP_CONCAT(DISTINCT mo.name SEPARATOR ',') AS occupation_names,
                 mf.name AS formation_name,
+                mf.id AS formation_id,
                 TIMESTAMPDIFF(YEAR, r.service_len, CURDATE()) AS service_len,
                 r.IsSergeant,
                 r.IsOfficer
@@ -64,15 +66,15 @@ try {
 
     if ($stmt->rowCount() > 0) {
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $output .= "<tr>
+            $sex_display = $row['sex'] == 0 ? 'Муж' : 'Жен';
+            $output .= "<tr data-rank-id='{$row['rank_num']}' data-formation-id='{$row['formation_id']}' data-sex='{$row['sex']}'>
                         <td>" . htmlspecialchars($row['name'] ?? 'NDA') . "</td>
                         <td>" . htmlspecialchars($row['age'] ?? 'NDA') . "</td>
-                        <td>" . htmlspecialchars($row['sex'] ?? 'NDA') . "</td>
-                        <td>" . htmlspecialchars($row['rank_id'] ?? 'NDA') . "</td>
+                        <td>$sex_display</td>
+                        <td>" . htmlspecialchars($row['rank_name'] ?? 'NDA') . "</td>
                         <td>" . htmlspecialchars($row['formation_name'] ?? 'NDA') . "</td>
                         <td>";
-
-            // ВУС
+            
             if (!empty($row['occupation_names'])) {
                 $vusList = explode(',', $row['occupation_names']);
                 $vusCount = count($vusList);
@@ -95,61 +97,53 @@ try {
             $output .= "</td><td>" . htmlspecialchars($row['service_len'] ?? 'NDA') . "</td></tr>";
         }
     } else {
-        $output .= "Нет данных для отображения.";
+        $output .= "<tr><td colspan='7'>Нет данных для отображения.</td></tr>";
     }
 } catch (PDOException $e) {
-    $output .= "Ошибка при выборке данных: " . $e->getMessage();
+    $output .= "<tr><td colspan='7'>Ошибка при выборке данных: " . htmlspecialchars($e->getMessage()) . "</td></tr>";
 }
-
 $output .= '</tbody></table></div>';
 
-// Добавляем стили и скрипт
 $output .= '
 <script>
-    const rows = document.querySelectorAll("table tbody tr");
-    
-    const nameFilter = document.getElementById("name_filter");
-    const ageFilter = document.getElementById("age_filter");
-    const sexFilter = document.getElementById("sex_filter");
-    const rankFilter = document.getElementById("rank_filter");
-    const formationFilter = document.getElementById("formation_filter");
+    function debounce(func, timeout = 300) {
+        let timer;
+        return (...args) => {
+            clearTimeout(timer);
+            timer = setTimeout(() => { func.apply(this, args); }, timeout);
+        };
+    }
 
     function filterTable() {
-        const nameVal = nameFilter.value.toLowerCase();
-        const ageVal = ageFilter.value;
-        const sexVal = sexFilter.value;
-        const rankVal = rankFilter.value;
-        const formationVal = formationFilter.value;
-
-        rows.forEach(row => {
-            const cells = row.querySelectorAll("td");
-            const name = cells[0].textContent.toLowerCase();
-            const age = parseInt(cells[1].textContent, 10);
-            const sex = cells[2].textContent.toLowerCase();
-            const rank = cells[3].textContent.toLowerCase();
-            const formation = cells[4].textContent.toLowerCase();
-
-            const matchesName = name.includes(nameVal);
-            const matchesAge = ageVal ? age >= parseInt(ageVal, 10) : true;
-            const matchesSex = sexVal ? sex.includes(sexVal.toLowerCase()) : true;
-            const matchesRank = rankVal ? rank.includes(rankVal.toLowerCase()) : true;
-            const matchesFormation = formationVal ? formation.includes(formationVal.toLowerCase()) : true;
-
-            if (matchesName && matchesAge && matchesSex && matchesRank && matchesFormation) {
-                row.style.display = "";
-            } else {
-                row.style.display = "none";
-            }
+        const nameVal = document.getElementById("name_filter").value.toLowerCase();
+        const ageVal = document.getElementById("age_filter").value;
+        const sexVal = document.getElementById("sex_filter").value;
+        const rankVal = document.getElementById("rank_filter").value;
+        const formationVal = document.getElementById("formation_filter").value.toLowerCase();
+        
+        document.querySelectorAll("tbody tr").forEach(row => {
+            const name = row.cells[0].textContent.toLowerCase();
+            const age = parseInt(row.cells[1].textContent) || 0;
+            const sex = row.getAttribute("data-sex");
+            const rankId = row.getAttribute("data-rank-id");
+            const formation = row.cells[4].textContent.toLowerCase();
+            
+            const showRow = 
+                name.includes(nameVal) &&
+                (ageVal ? age >= parseInt(ageVal) : true) &&
+                (sexVal ? sex === sexVal : true) &&
+                (rankVal ? rankId === rankVal : true) &&
+                (formationVal ? formation.includes(formationVal) : true);
+            
+            row.style.display = showRow ? "" : "none";
         });
     }
 
-    nameFilter.addEventListener("input", filterTable);
-    ageFilter.addEventListener("input", filterTable);
-    sexFilter.addEventListener("change", filterTable);
-    rankFilter.addEventListener("change", filterTable);
-    formationFilter.addEventListener("change", filterTable);
-
-    filterTable();
+    document.getElementById("name_filter").addEventListener("input", debounce(filterTable));
+    document.getElementById("age_filter").addEventListener("input", debounce(filterTable));
+    document.getElementById("sex_filter").addEventListener("change", filterTable);
+    document.getElementById("rank_filter").addEventListener("change", filterTable);
+    document.getElementById("formation_filter").addEventListener("change", filterTable);
 
     function toggleVus(btn) {
         const list = btn.nextElementSibling;
@@ -161,31 +155,54 @@ $output .= '
             btn.textContent = btn.textContent.replace("Скрыть", "Показать");
         }
     }
+
+    // Первоначальная фильтрация
+    filterTable();
 </script>
-<link href="../css/style.css" rel="stylesheet">
+
 <style>
+    .table-container {
+        overflow-x: auto;
+        margin-top: 20px;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    th, td {
+        padding: 8px 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    th {
+        background-color: #3498DB;
+        position: sticky;
+        top: 0;
+    }
+    input[type="text"], input[type="number"], select {
+        width: 100%;
+        padding: 4px;
+        box-sizing: border-box;
+        margin-top: 4px;
+    }
     .vus-wrapper {
         position: relative;
-        margin: 2px 0;
     }
     .toggle-vus-btn {
         background: none;
         border: none;
         color: #0066cc;
         cursor: pointer;
-        padding: 2px 5px;
-        text-align: left;
+        padding: 0;
         font: inherit;
     }
     .toggle-vus-btn:hover {
         text-decoration: underline;
     }
     .vus-list {
-        margin: 5px 0 0 15px;
+        margin: 5px 0 0 0;
         padding: 0;
         list-style-type: none;
-        border-left: 2px solid #ddd;
-        padding-left: 10px;
     }
     .vus-list li {
         padding: 2px 0;
