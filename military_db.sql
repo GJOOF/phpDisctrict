@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: 127.0.0.1:3306
--- Время создания: Май 20 2025 г., 20:07
+-- Время создания: Июн 05 2025 г., 11:51
 -- Версия сервера: 8.0.30
 -- Версия PHP: 8.1.9
 
@@ -147,7 +147,10 @@ CREATE TABLE `mil_formation` (
 INSERT INTO `mil_formation` (`id`, `type_id`, `name`, `commanding_officer`) VALUES
 (1, 1, '1/1 мср', 1),
 (2, 1, '2/1 мср', 2),
-(3, 2, '1 мср', 3);
+(3, 2, '1 мср', 3),
+(4, 5, '45 мсп', 4),
+(5, 7, '2/1 мсд', 5),
+(7, 4, '1/45 мсп', 6);
 
 -- --------------------------------------------------------
 
@@ -288,7 +291,12 @@ CREATE TABLE `recruit` (
 INSERT INTO `recruit` (`id`, `name`, `age`, `sex`, `rank_id`, `service_len`, `IsSergeant`, `IsOfficer`, `education`) VALUES
 (1, 'Иванов Д.С.', '2001-11-09 00:00:00', 0, 10, '2021-09-05 21:00:00', 0, 1, NULL),
 (2, 'Очеретный В. И.', '1999-08-09 00:00:00', 0, 11, '2020-08-07 21:00:00', 0, 1, NULL),
-(3, 'Исаченко А. А.', '1998-08-09 00:00:00', 0, 12, '2020-08-07 21:00:00', 0, 1, NULL);
+(3, 'Исаченко А. А.', '1998-08-09 00:00:00', 0, 12, '2020-08-07 21:00:00', 0, 1, NULL),
+(4, 'Родин В. И.', '1995-08-09 00:00:00', 0, 15, '2025-05-29 10:12:32', 0, 1, NULL),
+(5, 'Мухин Е. А.', '1980-08-09 00:00:00', 0, 16, '2025-05-22 15:45:59', 0, 1, NULL),
+(6, 'Кузнецов Г. Л.', '1970-08-09 00:00:00', 0, 14, '2025-05-29 10:12:50', 0, 1, NULL),
+(7, 'Рохлин Г. Л.', '2005-08-09 00:00:00', 0, 4, '2025-05-22 15:53:42', 1, 0, NULL),
+(8, 'Панов П. А.', '2005-08-09 00:00:00', 0, 2, '2025-05-22 15:55:13', 0, 0, NULL);
 
 -- --------------------------------------------------------
 
@@ -326,10 +334,20 @@ CREATE TABLE `recruit_occupation` (
 --
 
 INSERT INTO `recruit_occupation` (`recruit_id`, `occupation_id`) VALUES
+(5, 37),
+(5, 37),
+(5, 37),
+(5, 37),
+(5, 37),
+(5, 37),
 (1, 33),
-(2, 33),
-(3, 34),
-(1, 1);
+(2, 34),
+(3, 35),
+(4, 36),
+(5, 37),
+(6, 35),
+(7, 1),
+(8, 18);
 
 -- --------------------------------------------------------
 
@@ -689,7 +707,7 @@ ALTER TABLE `formation_type`
 -- AUTO_INCREMENT для таблицы `mil_formation`
 --
 ALTER TABLE `mil_formation`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT для таблицы `mil_occupation`
@@ -713,7 +731,7 @@ ALTER TABLE `mil_unit`
 -- AUTO_INCREMENT для таблицы `recruit`
 --
 ALTER TABLE `recruit`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT для таблицы `settlement`
